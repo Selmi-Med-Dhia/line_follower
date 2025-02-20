@@ -2,7 +2,7 @@ int flag;
 bool PIDyes;
 int threashhold[8];
 int sensors[8] = {4,12,13,14,25,26,27,35};
-int weights[8] = {100,80,70,50,50,70,80,100};
+int weights[8] = {10,8,7,5,5,7,8,10};
 int oldSums[8] = {0,0,0,0,0};
 int oldTimes[8] = {0,0,0,0,0};
 int lastMeasure;
@@ -92,7 +92,7 @@ void setup() {
   kp = 1;
   kd = 2;
   ki = 0;
-  ks = 18;
+  ks = 1;
   led = 32;
   pushButton = 33;
   trig = 5;
@@ -103,20 +103,29 @@ void setup() {
   leftMotorB = 22;
   rightMotorA = 21;
   leftMotorA = 23;
+  pinMode(led, OUTPUT);
+  pinMode(pushButton, INPUT);
+  pinMode(trig, OUTPUT);
+  pinMode(echo, INPUT);
+  delay(1000);
+  calibrate();
+  
+  while (digitalRead(pushButton) == 0){
+    delay(1);
+  };
   delay(1000);
   analogWrite(rightMotorA, 0);
   analogWrite(leftMotorA, 0);
-  /*
+  
   speedRight(baseSpeedRight);
   speedLeft(baseSpeedLeft);
-  */
+  
   Serial.begin(9600);
 }
-
 void loop() {
-  /*
+  
   speedRight((baseSpeedRight - getPIDValue() * ks)%255 );
   speedLeft((baseSpeedLeft + getPIDValue() * ks)%255 );
-  */
-  Serial.println(analogRead(sensors[0]));
+  
+  Serial.println(getPIDValue());
 }
