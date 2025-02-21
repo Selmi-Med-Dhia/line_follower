@@ -2,7 +2,7 @@ int flag;
 bool PIDyes;
 int threashhold[8];
 int sensors[8] = {4,12,13,14,25,26,27,35};
-int weights[8] = {-15,-9,-6,-5,5,6,9,15};
+int weights[8] = {-100,-9,-6,-5,5,6,9,100};
 int oldSums[8] = {0,0,0,0,0};
 unsigned long oldTimes[8] = {0,0,0,0,0};
 int kp, kd, ki;
@@ -47,31 +47,69 @@ void calibrate(){
   digitalWrite(led, LOW);
   delay(500);
   int sumBlack[8] = {0,0,0,0,0,0,0,0};
-  for(int j = 0; j<15; j++){
+  for(int j = 0; j<100; j++){
     for(int i=0; i<8; i++){
       sumBlack[i] += analogRead(sensors[i]);
     }
     digitalWrite(led, HIGH);
-    delay(20);
+    delay(15);
     digitalWrite(led, LOW);
-    delay(20);
+    delay(15);
   }
   digitalWrite(led, HIGH);
   delay(3000);
   digitalWrite(led, LOW);
   delay(500);
   int sumWhite[8] = {0,0,0,0,0,0,0,0};
-  for(int j = 0; j<15; j++){
+  for(int j = 0; j<100; j++){
     for(int i=0; i<8; i++){
       sumWhite[i] += analogRead(sensors[i]);
     }
     digitalWrite(led, HIGH);
-    delay(20);
+    delay(15);
     digitalWrite(led, LOW);
-    delay(20);
+    delay(15);
   }
   for(int i = 0; i <8; i++){
-    threashhold[i] = (sumBlack[i] + sumWhite[i])/30;
+    threashhold[i] = (sumBlack[i] + sumWhite[i])/200;
+  }
+}
+
+void calibrate2(){
+  digitalWrite(led, HIGH);
+  delay(1000);
+  digitalWrite(led, LOW);
+  delay(500);
+  int sumBlack[8] = {4000,4000,4000,4000,4000,4000,4000,4000};
+  for(int j = 0; j<100; j++){
+    for(int i=0; i<8; i++){
+      if(analogRead(sensors[i]) < sumBlack[i]){
+        sumBlack[i] = analogRead(sensors[i]);
+      }
+    }
+    digitalWrite(led, HIGH);
+    delay(15);
+    digitalWrite(led, LOW);
+    delay(15);
+  }
+  digitalWrite(led, HIGH);
+  delay(3000);
+  digitalWrite(led, LOW);
+  delay(500);
+  int sumWhite[8] = {0,0,0,0,0,0,0,0};
+  for(int j = 0; j<100; j++){
+    for(int i=0; i<8; i++){
+      if(analogRead(sensors[i]) > sumBlack[i]){
+        sumBlack[i] = analogRead(sensors[i]);
+      }
+    }
+    digitalWrite(led, HIGH);
+    delay(15);
+    digitalWrite(led, LOW);
+    delay(15);
+  }
+  for(int i = 0; i <8; i++){
+    threashhold[i] = (sumBlack[i] + sumWhite[i])/2;
   }
 }
 
@@ -88,17 +126,17 @@ void setup() {
   kp = 1;
   kd = 1;
   ki = 0;
-  ks = 1.0;
+  ks = 1.3;
   led = 32;
   pushButton = 33;
   trig = 5;
   echo = 18;
   baseSpeedRight = 152;
   baseSpeedLeft = 130;
-  rightMotorB = 19;
-  leftMotorB = 22;
-  rightMotorA = 21;
-  leftMotorA = 23;
+  rightMotorB = 21;
+  leftMotorB = 23;
+  rightMotorA = 19;
+  leftMotorA = 22;
   pinMode(led, OUTPUT);
   pinMode(pushButton, INPUT_PULLUP);
   pinMode(trig, OUTPUT);
@@ -108,10 +146,12 @@ void setup() {
   pinMode(rightMotorA,OUTPUT);
   pinMode(leftMotorA,OUTPUT);
   delay(1000);
+  /*
   calibrate();
   while (digitalRead(pushButton) == 1){
     delay(1);
   };
+  */
   delay(1000);
   analogWrite(rightMotorA, 0);
   analogWrite(leftMotorA, 0);
@@ -121,7 +161,9 @@ void setup() {
   Serial.begin(9600);
 }
 void loop() {
-  speedRight(min(255,  (int)( (baseSpeedRight + getPIDValue() * ks ) )) );
-  speedLeft(min(255,(int)( (baseSpeedLeft - getPIDValue() * ks ) ) ) );
-  
+  /*
+  speedRight(min(150,  (int)( (baseSpeedRight + getPIDValue() * ks ) )) );
+  speedLeft(min(150,  (int)( (baseSpeedLeft - getPIDValue() * ks ) ) ) );
+  */
+  //Serial.println(analogRead(sensors[0]));
 }
