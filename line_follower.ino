@@ -1,11 +1,9 @@
-int TRIG_PIN 8
-int ECHO_PIN 7
-int lastRubyTime=-500;
+int lastRubyTime=-4000;
 int flag;
 bool PIDyes;
 int threashhold[8];
 int sensors[8] = {4,12,13,14,25,26,27,35};
-int weights[8] = {-100,-9,-6,-5,5,6,9,100};
+int weights[8] = {-255,-9,-6,-5,5,6,9,255};
 int oldSums[8] = {0,0,0,0,0};
 unsigned long oldTimes[8] = {0,0,0,0,0};
 int kp, kd, ki;
@@ -19,7 +17,8 @@ int rightMotorA;
 int leftMotorA;
 int pushButton;
 int trig, echo;
-
+int tmp;
+int direction;
 
 int getPIDValue(){
   int sum = 0;
@@ -78,44 +77,6 @@ void calibrate(){
   }
 }
 
-void calibrate2(){
-  digitalWrite(led, HIGH);
-  delay(1000);
-  digitalWrite(led, LOW);
-  delay(500);
-  int sumBlack[8] = {4000,4000,4000,4000,4000,4000,4000,4000};
-  for(int j = 0; j<100; j++){
-    for(int i=0; i<8; i++){
-      if(analogRead(sensors[i]) < sumBlack[i]){
-        sumBlack[i] = analogRead(sensors[i]);
-      }
-    }
-    digitalWrite(led, HIGH);
-    delay(15);
-    digitalWrite(led, LOW);
-    delay(15);
-  }
-  digitalWrite(led, HIGH);
-  delay(3000);
-  digitalWrite(led, LOW);
-  delay(500);
-  int sumWhite[8] = {0,0,0,0,0,0,0,0};
-  for(int j = 0; j<100; j++){
-    for(int i=0; i<8; i++){
-      if(analogRead(sensors[i]) > sumBlack[i]){
-        sumBlack[i] = analogRead(sensors[i]);
-      }
-    }
-    digitalWrite(led, HIGH);
-    delay(15);
-    digitalWrite(led, LOW);
-    delay(15);
-  }
-  for(int i = 0; i <8; i++){
-    threashhold[i] = (sumBlack[i] + sumWhite[i])/2;
-  }
-}
-
 void speedRight(int speed){
   analogWrite(rightMotorB, speed);
 }
@@ -123,47 +84,45 @@ void speedLeft(int speed){
   analogWrite(leftMotorB, speed);
 }
 
-int ruby()
-{
-  digitalWrite(TRIG_PIN, LOW);
+int ruby(){
+  return 0;
+  digitalWrite(trig, LOW);
   delayMicroseconds(2);
-  digitalWrite(TRIG_PIN, HIGH);
+  digitalWrite(trig, HIGH);
   delayMicroseconds(10);
-  digitalWrite(TRIG_PIN, LOW);
+  digitalWrite(trig, LOW);
 
-  long duration= pulseIn(ECHO_PIN, HIGH);
+  long duration= pulseIn(echo, HIGH, 6000);
 
   float distance = duration* 0.034/2;
-
+  //delay(1);
+  if (distance == 0){
+    return 0;
+  }
   if(distance <=25){
     return (1);
   }
   return 0;
-  Serial.print("Distance: ");
-  Serial.print(distance);
-  Serial.println(" cm");
-  delay(500);
 }
 
 void setup() {
-  pinMode(TRIG_PIN, OUTPUT);
-  pinMode(ECHO_PIN, INPUT);
   flag = 0;
   PIDyes = false;
   kp = 1;
   kd = 1;
   ki = 0;
-  ks = 1.3;
+  ks = 2;
   led = 32;
   pushButton = 33;
   trig = 5;
   echo = 18;
-  baseSpeedRight = 152;
-  baseSpeedLeft = 130;
-  rightMotorB = 21;
-  leftMotorB = 23;
-  rightMotorA = 19;
-  leftMotorA = 22;
+  baseSpeedRight = 255;
+  baseSpeedLeft = 233;
+
+  rightMotorB = 23;
+  leftMotorB = 21;
+  rightMotorA = 22;
+  leftMotorA = 19;
   pinMode(led, OUTPUT);
   pinMode(pushButton, INPUT_PULLUP);
   pinMode(trig, OUTPUT);
@@ -186,22 +145,31 @@ void setup() {
   Serial.begin(9600);
 }
 void loop() {
-<<<<<<< HEAD
-  /*
-  speedRight(min(150,  (int)( (baseSpeedRight + getPIDValue() * ks ) )) );
-  speedLeft(min(150,  (int)( (baseSpeedLeft - getPIDValue() * ks ) ) ) );
-  */
-  if (millis()-1000>lastRubyTime && ruby())
-  {
-    lastRubyTime=millis();
-    speedRight(0);
-    speedLeft(0);
-    digitalWrite(led,HIGH);
-    delay(3000);
+  if (ruby()){
+    if (millis() - lastRubyTime> 5000){
+      lastRubyTime=millis();
+      speedRight(0);
+      speedLeft(0);
+      digitalWrite(led,HIGH);
+      delay(3000);
+      digitalWrite(led,LOW);
+    }
   }
-=======
-  speedRight(min(255,  (int)( (baseSpeedRight + getPIDValue() * ks ) )) );
-  speedLeft(min(255,  (int)( (baseSpeedLeft - getPIDValue() * ks ) ) ) );
->>>>>>> 48d85f86986b39103573c82324493eddcd7e4952
-  //Serial.println(analogRead(sensors[0]));
+  tmp = getPIDValue();
+  speedRight(max(0, min(178,  (int)( (baseSpeedRight - tmp * ks ) ) ) ) );
+  speedLeft(max (0, min(178,  (int)( (baseSpeedLeft + tmp * ks ) ) ) ) );
+  /*
+  if(tmp > 0){
+    //right
+    direction = 1;
+  }else if(tmp <0){
+    //left
+    direction = -1;
+  }else{
+    tmp = 255 * direction;
+    speedRight(max(0, min(178,  (int)( (baseSpeedRight - tmp * ks ) ) ) ) );
+    speedLeft(max (0, min(178,  (int)( (baseSpeedLeft + tmp * ks ) ) ) ) );
+    delay(100);
+  }
+  */
 }
