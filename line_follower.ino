@@ -173,12 +173,10 @@ void setup() {
   pinMode(rightMotorA,OUTPUT);
   pinMode(leftMotorA,OUTPUT);
   delay(1000);
-  /*
   calibrate();
   while (digitalRead(pushButton) == 1){
     delay(1);
   };
-  */
   delay(1000);
   analogWrite(rightMotorA, 0);
   analogWrite(leftMotorA, 0);
@@ -188,6 +186,7 @@ void setup() {
   Serial.begin(9600);
 }
 void loop() {
+<<<<<<< HEAD
   /*
   speedRight(min(150,  (int)( (baseSpeedRight + getPIDValue() * ks ) )) );
   speedLeft(min(150,  (int)( (baseSpeedLeft - getPIDValue() * ks ) ) ) );
@@ -200,5 +199,9 @@ void loop() {
     digitalWrite(led,HIGH);
     delay(3000);
   }
+=======
+  speedRight(min(255,  (int)( (baseSpeedRight + getPIDValue() * ks ) )) );
+  speedLeft(min(255,  (int)( (baseSpeedLeft - getPIDValue() * ks ) ) ) );
+>>>>>>> 48d85f86986b39103573c82324493eddcd7e4952
   //Serial.println(analogRead(sensors[0]));
 }
