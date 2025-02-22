@@ -1,3 +1,6 @@
+int TRIG_PIN 8
+int ECHO_PIN 7
+int lastRubyTime=-500;
 int flag;
 bool PIDyes;
 int threashhold[8];
@@ -120,7 +123,31 @@ void speedLeft(int speed){
   analogWrite(leftMotorB, speed);
 }
 
+int ruby()
+{
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  long duration= pulseIn(ECHO_PIN, HIGH);
+
+  float distance = duration* 0.034/2;
+
+  if(distance <=25){
+    return (1);
+  }
+  return 0;
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+  delay(500);
+}
+
 void setup() {
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
   flag = 0;
   PIDyes = false;
   kp = 1;
@@ -165,5 +192,13 @@ void loop() {
   speedRight(min(150,  (int)( (baseSpeedRight + getPIDValue() * ks ) )) );
   speedLeft(min(150,  (int)( (baseSpeedLeft - getPIDValue() * ks ) ) ) );
   */
+  if (millis()-1000>lastRubyTime && ruby())
+  {
+    lastRubyTime=millis();
+    speedRight(0);
+    speedLeft(0);
+    digitalWrite(led,HIGH);
+    delay(3000);
+  }
   //Serial.println(analogRead(sensors[0]));
 }
