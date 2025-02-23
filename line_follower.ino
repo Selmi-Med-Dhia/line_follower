@@ -3,11 +3,12 @@ int flag;
 bool PIDyes;
 int threashhold[8];
 int sensors[8] = {4,12,13,14,25,26,27,35};
-int weights[8] = {-255,-9,-6,-5,5,6,9,255};
+int weights[8] = {-60,-9,-6,-5,5,6,9,255};
 int oldSums[8] = {0,0,0,0,0};
 unsigned long oldTimes[8] = {0,0,0,0,0};
 int kp, kd, ki;
 float ks;
+bool blackOnWhite;
 int led;
 int baseSpeedRight;
 int baseSpeedLeft;
@@ -19,8 +20,24 @@ int pushButton;
 int trig, echo;
 int tmp;
 int direction;
+int rubyCount;
 
 int getPIDValue(){
+  /*
+  if((getValue(0) == 1) && (getValue(1) == 1) && (getValue(2) == 1) && (getValue(5) == 1) && (getValue(6) == 1) && (getValue(7) == 1)){
+    blackOnWhite = false;
+  }
+  if(blackOnWhite == false && (getValue(0) == 1) && (getValue(1) == 1) && (getValue(2) == 1)&& ((getValue(3) == 0) || (getValue(4) == 0)) && (getValue(5) == 1) && (getValue(6) == 1) && (getValue(7) == 1) ){
+    blackOnWhite = true;
+  }
+  if(flags > 8 && (getValue(0) == 1) && (getValue(1) == 1) && (getValue(2) == 1) && (getValue(3) == 1) && (getValue(4) == 1) && (getValue(5) == 1) && (getValue(6) == 1) && (getValue(7) == 1)){
+    speedRight(0);
+    speedLeft(0);
+    while(true){
+      delay(1000);
+    }
+  }
+  */
   int sum = 0;
   for(int j=0; j<4; j++){
     for(int i=0; i<8; i++){
@@ -40,7 +57,11 @@ int getPIDValue(){
 }
 
 int getValue(int sensor){
-  return( analogRead(sensors[sensor]) > threashhold[sensor]);
+  if(blackOnWhite){
+    return( analogRead(sensors[sensor]) > threashhold[sensor]);
+  }else{
+    return( analogRead(sensors[sensor]) < threashhold[sensor]);
+  }
 }
 
 void calibrate(){
@@ -78,14 +99,25 @@ void calibrate(){
 }
 
 void speedRight(int speed){
-  analogWrite(rightMotorB, speed);
+  if (speed >0){
+    analogWrite(rightMotorA, 0);
+    analogWrite(rightMotorB, speed);
+  }else{
+    analogWrite(rightMotorB, 0);
+    analogWrite(rightMotorA, (-1)*speed);
+  }
 }
 void speedLeft(int speed){
-  analogWrite(leftMotorB, speed);
+  if(speed >0){
+    analogWrite(leftMotorA, 0);
+    analogWrite(leftMotorB, speed);
+  }else{
+    analogWrite(leftMotorB, 0);
+    analogWrite(leftMotorA, (-1)*speed);
+  }
 }
 
 int ruby(){
-  return 0;
   digitalWrite(trig, LOW);
   delayMicroseconds(2);
   digitalWrite(trig, HIGH);
@@ -95,7 +127,6 @@ int ruby(){
   long duration= pulseIn(echo, HIGH, 6000);
 
   float distance = duration* 0.034/2;
-  //delay(1);
   if (distance == 0){
     return 0;
   }
@@ -114,11 +145,12 @@ void setup() {
   ks = 2;
   led = 32;
   pushButton = 33;
+  rubyCount = 0;
   trig = 5;
   echo = 18;
   baseSpeedRight = 255;
   baseSpeedLeft = 233;
-
+  blackOnWhite = true;
   rightMotorB = 23;
   leftMotorB = 21;
   rightMotorA = 22;
@@ -146,7 +178,8 @@ void setup() {
 }
 void loop() {
   if (ruby()){
-    if (millis() - lastRubyTime> 5000){
+    if (millis() - lastRubyTime> 4000){
+      rubyCount++;
       lastRubyTime=millis();
       speedRight(0);
       speedLeft(0);
@@ -156,8 +189,19 @@ void loop() {
     }
   }
   tmp = getPIDValue();
-  speedRight(max(0, min(178,  (int)( (baseSpeedRight - tmp * ks ) ) ) ) );
-  speedLeft(max (0, min(178,  (int)( (baseSpeedLeft + tmp * ks ) ) ) ) );
+  speedRight(max(-70, min(170,  (int)( (baseSpeedRight - tmp * ks ) ) ) ) );
+  speedLeft(max (-70, min(170,  (int)( (baseSpeedLeft + tmp * ks ) ) ) ) );
+
+
+  /*
+  if(getValue(0) == 1 && getValue(7) == 0){
+    speedRight(255);
+    speedLeft(-190);
+    while(getValue(0) == 1){
+      delay(1);
+    }
+  }
+  */
   /*
   if(tmp > 0){
     //right
