@@ -16,11 +16,22 @@ int rightMotorB;
 int leftMotorB;
 int rightMotorA;
 int leftMotorA;
+bool lastInvert;
 int pushButton;
 int trig, echo;
+bool finished;
 int tmp;
 int direction;
 int rubyCount;
+int backwardsSpeed;
+int forwardsSpeed;
+long long angle;
+bool weightSwitch;
+int weightSwitchTime;
+bool firstFlag;
+bool secondFlag;
+bool readyForInvert;
+int invertedTime;
 
 int getPIDValue(){
   /*
@@ -155,6 +166,15 @@ void setup() {
   leftMotorB = 21;
   rightMotorA = 22;
   leftMotorA = 19;
+  backwardsSpeed = -70;
+  forwardsSpeed = 130;
+  firstFlag = true;
+  secondFlag = true;
+  angle =0;
+  readyForInvert = false;
+  finished = false;
+  lastInvert = false;
+  weightSwitch = false;
   pinMode(led, OUTPUT);
   pinMode(pushButton, INPUT_PULLUP);
   pinMode(trig, OUTPUT);
@@ -186,34 +206,76 @@ void loop() {
       digitalWrite(led,HIGH);
       delay(3000);
       digitalWrite(led,LOW);
+      if(rubyCount == 1){
+        angle =0;
+      }
+      if (rubyCount == 2){
+        weights[1] = -9;
+        weights[6] = 9;
+        readyForInvert = true;
+        backwardsSpeed = -170;
+        forwardsSpeed=255;  
+      }
     }
   }
   tmp = getPIDValue();
-  speedRight(max(-70, min(170,  (int)( (baseSpeedRight - tmp * ks ) ) ) ) );
-  speedLeft(max (-70, min(170,  (int)( (baseSpeedLeft + tmp * ks ) ) ) ) );
-
-
-  /*
-  if(getValue(0) == 1 && getValue(7) == 0){
-    speedRight(255);
-    speedLeft(-190);
-    while(getValue(0) == 1){
-      delay(1);
+  if (  max(backwardsSpeed, min(forwardsSpeed,  (int)( (baseSpeedRight - tmp * ks ) ) ) ) >  max (backwardsSpeed, min(forwardsSpeed,  (int)( (baseSpeedLeft + tmp * ks ) ) ) )  ){
+    angle++;
+  }else if (  max(backwardsSpeed, min(forwardsSpeed,  (int)( (baseSpeedRight - tmp * ks ) ) ) ) <  max (backwardsSpeed, min(forwardsSpeed,  (int)( (baseSpeedLeft + tmp * ks ) ) ) )  ){
+    angle --;
+  }
+  if(firstFlag && angle == -65){
+    firstFlag = false;
+    weights[0] = -255;
+    weights[7] = 100;
+    backwardsSpeed = -255;
+    forwardsSpeed=255;
+    weightSwitch = true;
+    weightSwitchTime = millis();
+  }
+  if (weightSwitch && (millis() - weightSwitchTime) >500 && secondFlag){
+    secondFlag = false;
+    weights[0] = -30;
+    weights[7] = 255;
+    weights[1] = -2;
+    weights[6] = 100;
+    backwardsSpeed = -255;
+    forwardsSpeed=255;  
+  }
+  if(readyForInvert && getValue(0) + getValue(1) + getValue(2) + getValue(3) + getValue(4) + getValue(5) + getValue(6) + getValue(7) >6){
+    blackOnWhite = false;
+    weights[0] = -30;
+    weights[7] = 255;
+    weights[1] = -2;
+    weights[6] = 100;
+    invertedTime = millis();
+    readyForInvert = false;
+    backwardsSpeed = -170;
+    forwardsSpeed=255;  
+    delay(350);
+  }
+  if(blackOnWhite == false && millis() - invertedTime > 300){
+    weights[0] = -255;
+    weights[7] = 30;
+    weights[1] = -100;
+    weights[6] = 2;
+    backwardsSpeed = -170;
+    forwardsSpeed= 255;  
+    digitalWrite(led, HIGH);
+    lastInvert = true;
+  }
+  if (lastInvert && (getValue(3) == 0 || getValue(4) == 0) && getValue(0) == 1 && getValue(1) == 1 && getValue(2) == 1 && getValue(5) == 1 && getValue(6) == 1 && getValue(7) == 1){
+    blackOnWhite = true;
+    delay(500);
+    finished = true;
+  }
+  if (finished && getValue(0) == 1 && getValue(1) == 1 && getValue(2) == 1 && getValue(3) == 1 && getValue(4) == 1 && getValue(5) == 1 && getValue(6) == 1 && getValue(7) == 1){
+    speedRight(0);
+    speedLeft(0);
+    while(true){
+      delay(1000);
     }
   }
-  */
-  /*
-  if(tmp > 0){
-    //right
-    direction = 1;
-  }else if(tmp <0){
-    //left
-    direction = -1;
-  }else{
-    tmp = 255 * direction;
-    speedRight(max(0, min(178,  (int)( (baseSpeedRight - tmp * ks ) ) ) ) );
-    speedLeft(max (0, min(178,  (int)( (baseSpeedLeft + tmp * ks ) ) ) ) );
-    delay(100);
-  }
-  */
+  speedRight(max(backwardsSpeed, min(forwardsSpeed,  (int)( (baseSpeedRight - tmp * ks ) ) ) ) );
+  speedLeft(max (backwardsSpeed, min(forwardsSpeed,  (int)( (baseSpeedLeft + tmp * ks ) ) ) ) );
 }
